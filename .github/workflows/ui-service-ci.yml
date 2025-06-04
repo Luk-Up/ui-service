@@ -30,6 +30,6 @@ jobs:
       
       - name: Apply Kubernetes Manifests
         run: |
-         cd ../k8s/ui-service
+         cd ./k8s/ui-service  
          kubectl apply -f deployment.yaml
          kubectl apply -f service.yaml
