@@ -11,45 +11,42 @@ on:
 jobs:
   build_and_deploy:
     runs-on: self-hosted
-    # Explicitly set the default shell for run steps if you want to be sure
-    # or if you want to use bash on Windows via Git Bash or WSL.
-    # defaults:
-    #   run:
-    #     shell: pwsh # or powershell
+    defaults: # Set default shell for all run steps in this job
+      run:
+        shell: powershell # Use Windows PowerShell
 
     steps:
       - name: Checkout UI Service code
-        uses: actions/checkout@v3 # Consider v4
+        uses: actions/checkout@v3
         with:
-          path: ui-service # Content of Luk-Up/ui-service repo goes into {{ github.workspace }}/ui-service
+          path: ui-service
 
       - name: Checkout K8s manifests repository
-        uses: actions/checkout@v4 # Consider v4
+        uses: actions/checkout@v3
         with:
           repository: Luk-Up/k8s
-          path: k8s       # Content of Luk-Up/k8s repo goes into {{ github.workspace }}/k8s
+          path: k8s
 
       - name: Debug Workspace and Paths
         run: |
-          echo "GitHub Workspace: ${{ github.workspace }}"
-          echo "Listing content of GitHub Workspace:"
-          Get-ChildItem "${{ github.workspace }}"
-          echo "Expected ui-service checkout path: ${{ github.workspace }}\ui-service"
-          echo "Listing content of ui-service checkout:"
-          Get-ChildItem "${{ github.workspace }}\ui-service" -ErrorAction SilentlyContinue
-          echo "Expected k8s checkout path: ${{ github.workspace }}\k8s"
-          echo "Listing content of k8s checkout:"
-          Get-ChildItem "${{ github.workspace }}\k8s" -ErrorAction SilentlyContinue
-        shell: pwsh # Explicitly use PowerShell for these commands
+          Write-Host "GitHub Workspace: ${{ github.workspace }}"
+          Write-Host "Listing content of GitHub Workspace:"
+          Get-ChildItem "${{ github.workspace }}" | ForEach-Object { Write-Host $_.FullName }
+          $uiServiceCheckoutPath = Join-Path "${{ github.workspace }}" "ui-service"
+          Write-Host "Expected ui-service checkout path: $uiServiceCheckoutPath"
+          Write-Host "Listing content of ui-service checkout:"
+          Get-ChildItem $uiServiceCheckoutPath -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_.FullName }
+          $k8sCheckoutPath = Join-Path "${{ github.workspace }}" "k8s"
+          Write-Host "Expected k8s checkout path: $k8sCheckoutPath"
+          Write-Host "Listing content of k8s checkout:"
+          Get-ChildItem $k8sCheckoutPath -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_.FullName }
 
       - name: Build Docker Image
-        # Dockerfile is at: {{ github.workspace }}/ui-service/ui-service/Dockerfile
-        working-directory: ${{ github.workspace }}/ui-service/ui-service 
+        working-directory: ${{ github.workspace }}\ui-service\ui-service # Windows paths
         run: |
-          echo "Current directory for Docker build: $(Get-Location)" # PowerShell way
-          Get-ChildItem # PowerShell equivalent of ls -l
+          Write-Host "Current directory for Docker build: $((Get-Location).Path)"
+          Get-ChildItem # Lists items in the current directory
           docker build -t ahmedthemagnificent/ui-service .
-        shell: pwsh
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2 # Consider v3
@@ -59,14 +56,11 @@ jobs:
 
       - name: Push Docker Image
         run: docker push ahmedthemagnificent/ui-service
-        # shell: pwsh # Not strictly needed for docker command, but good for consistency
       
       - name: Apply Kubernetes Manifests
-        # Manifests are at: {{ github.workspace }}/k8s/ui-service/
-        working-directory: ${{ github.workspace }}/k8s/ui-service 
+        working-directory: ${{ github.workspace }}\k8s\ui-service # Windows paths
         run: |
-         echo "Current directory for kubectl: $(Get-Location)" # PowerShell way
-         Get-ChildItem # PowerShell equivalent of ls -l
+         Write-Host "Current directory for kubectl: $((Get-Location).Path)"
+         Get-ChildItem # Lists items in the current directory
          kubectl apply -f deployment.yaml
          kubectl apply -f service.yaml
-        shell: pwsh
