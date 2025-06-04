@@ -9,15 +9,26 @@ on:
       - main
 
 jobs:
-  build:
+  build_and_deploy:
     runs-on: self-hosted
 
     steps:
-      - name: Checkout code
+      - name: Checkout UI Service code
         uses: actions/checkout@v3
+        # This workflow file lives in Luk-Up/ui-service, so 'repository' isn't strictly needed here.
+        # It will check out Luk-Up/ui-service by default.
+        path: ui-service-code          # Checkout ui-service repo into {{ github.workspace }}/ui-service-code
+
+      - name: Checkout K8s manifests repository
+        uses: actions/checkout@v3
+        with:
+          repository: Luk-Up/k8s      # Checkout the k8s repo from the Luk-Up org
+          path: k8s-manifests         # Checkout k8s repo into {{ github.workspace }}/k8s-manifests
+          # token: ${{ secrets.PAT_FOR_K8S_REPO }} # Add if needed for private repo or permission issues
 
       - name: Build Docker Image
-        run: docker build -t ahmedthemagnificent/ui-service ./ui-service
+        working-directory: ./ui-service-code # Navigate into the checked-out ui-service code
+        run: docker build -t ahmedthemagnificent/ui-service . # Assumes Dockerfile is at the root of ui-service-code
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
@@ -29,7 +40,15 @@ jobs:
         run: docker push ahmedthemagnificent/ui-service
       
       - name: Apply Kubernetes Manifests
+        # This path is now confirmed by your screenshot:
+        # {{ github.workspace }}/k8s-manifests/  (root of the checked-out k8s repo)
+        #  └── ui-service/                       (subdirectory within k8s repo)
+        #      ├── deployment.yaml
+        #      └── service.yaml
+        working-directory: ./k8s-manifests/ui-service 
         run: |
-         cd ./k8s/ui-service  
+         echo "Current directory for kubectl: $(pwd)"
+         echo "Listing files in current directory:"
+         ls -la 
          kubectl apply -f deployment.yaml
          kubectl apply -f service.yaml
