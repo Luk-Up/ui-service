@@ -16,7 +16,7 @@ body, html {
 }
 
 .btn {
-  background-color: white;
+  background-color: red;
   color: black;
   border: none;
   padding: 10px 20px;
@@ -31,7 +31,7 @@ body, html {
 .ripple {
   position: absolute;
   border-radius: 50%;
-  background: white;
+  background: rebeccapurple;
   transform: scale(0);
   animation: ripple-animation 1s forwards;
   z-index: 1;
