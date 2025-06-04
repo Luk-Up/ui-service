@@ -27,7 +27,7 @@ jobs:
           # token: ${{ secrets.PAT_FOR_K8S_REPO }} # Add if needed for private repo or permission issues
 
       - name: Build Docker Image
-        working-directory: ./ui-service-code # Navigate into the checked-out ui-service code
+        working-directory: ./ui-service/ui-service # Navigate into the checked-out ui-service code
         run: docker build -t ahmedthemagnificent/ui-service . # Assumes Dockerfile is at the root of ui-service-code
 
       - name: Log in to Docker Hub
@@ -40,7 +40,7 @@ jobs:
         run: docker push ahmedthemagnificent/ui-service
       
       - name: Apply Kubernetes Manifests
-        working-directory: ./k8s-manifests/ui-service 
+        working-directory: ./k8s/ui-service 
         run: |
          echo "Current directory for kubectl: $(pwd)"
          echo "Listing files in current directory:"
