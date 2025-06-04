@@ -15,9 +15,9 @@ jobs:
     steps:
       - name: Checkout UI Service code
         uses: actions/checkout@v3
-        # This workflow file lives in Luk-Up/ui-service, so 'repository' isn't strictly needed here.
-        # It will check out Luk-Up/ui-service by default.
-        path: ui-service-code          # Checkout ui-service repo into {{ github.workspace }}/ui-service-code
+        with: # <-------------------- CORRECTED HERE
+          # repository: Luk-Up/ui-service # Not strictly needed if this workflow lives in Luk-Up/ui-service
+          path: ui-service-code          # Checkout ui-service repo into {{ github.workspace }}/ui-service-code
 
       - name: Checkout K8s manifests repository
         uses: actions/checkout@v3
@@ -40,11 +40,6 @@ jobs:
         run: docker push ahmedthemagnificent/ui-service
       
       - name: Apply Kubernetes Manifests
-        # This path is now confirmed by your screenshot:
-        # {{ github.workspace }}/k8s-manifests/  (root of the checked-out k8s repo)
-        #  └── ui-service/                       (subdirectory within k8s repo)
-        #      ├── deployment.yaml
-        #      └── service.yaml
         working-directory: ./k8s-manifests/ui-service 
         run: |
          echo "Current directory for kubectl: $(pwd)"
