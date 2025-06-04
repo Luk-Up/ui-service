@@ -1,26 +1,38 @@
 # Step 1: Use the official Node.js image as the base image
-FROM node:16
+FROM node:16 AS builder
 
-# Step 2: Set the working directory inside the container
+# Step 2: Set working directory
 WORKDIR /app
 
-# Step 3: Copy package.json and package-lock.json to the container
+# Step 3: Copy only the package files (to cache node_modules if unchanged)
 COPY package*.json ./
 
-# Step 4: Install dependencies
-RUN npm install
+# Step 4: Install only production dependencies for build
+RUN npm ci --legacy-peer-deps
 
-# Step 5: Copy the rest of the application files into the container
+# Step 5: Copy the rest of the files
 COPY . .
 
-# Step 6: Build the React app for production
+# Step 6: Build the React app
 RUN npm run build
 
-# Step 7: Install 'serve' to serve the build directory
+
+# ==========================
+# Stage 2: Lightweight serve
+# ==========================
+FROM node:16-slim
+
+# Step 7: Install serve globally
 RUN npm install -g serve
 
-# Step 8: Expose the port the app will run on
+# Step 8: Copy only the build folder from builder stage
+COPY --from=builder /app/build /app/build
+
+# Step 9: Set working directory
+WORKDIR /app
+
+# Step 10: Expose the port
 EXPOSE 5000
 
-# Step 9: Serve the build folder using serve
-CMD ["serve", "-s", "build"]
+# Step 11: Serve the app
+CMD ["serve", "-s", "build", "-l", "5000"]
