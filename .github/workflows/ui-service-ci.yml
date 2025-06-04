@@ -26,7 +26,7 @@ jobs:
 
       - name: Build Docker Image
         # Change working directory to where the Dockerfile and app source truly are
-        working-directory: ./ui-service-code/ui-service 
+        working-directory: ./ui-service/ui-service 
         run: |
           echo "Current directory for Docker build: $(pwd)"
           ls -la
