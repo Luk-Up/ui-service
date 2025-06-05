@@ -27,7 +27,7 @@ jobs:
       - name: Build Docker Image
         working-directory: ${{ github.workspace }}\ui-service\ui-service # Windows paths
         run: |
-          docker build -t ahmedthemagnificent/ui-service .
+          docker build -t ahmedthemagnificent/ui-service:latest .
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3 # Consider v3
@@ -36,7 +36,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Push Docker Image
-        run: docker push ahmedthemagnificent/ui-service
+        run: docker push ahmedthemagnificent/ui-service:latest
       
       - name: Apply Kubernetes Manifests
         working-directory: ${{ github.workspace }}\k8s\ui-service # Windows paths
