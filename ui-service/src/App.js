@@ -31,7 +31,7 @@ function App() {
           }}
         ></span>
       ))}
-      <button className="btn" onClick={handleClick}>Click Me</button>
+      <button className="btn" onClick={handleClick}>Annoying</button>
     </div>
   );
 }
