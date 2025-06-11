@@ -32,8 +32,8 @@ jobs:
           context: ./ui-service 
           file: ./ui-service/Dockerfile
           tags: |
-              ${{ env.DOCKER_IMAGE_NAME }}:latest
-              ${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
+              ahmedthemagnificent/ui-service:latest
+              ahmedthemagnificent/ui-service:${{ github.sha }}
 
   deploy:
     runs-on: self-hosted
