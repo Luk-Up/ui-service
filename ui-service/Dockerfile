@@ -35,4 +35,4 @@ WORKDIR /app
 EXPOSE 3000
 
 # Step 11: Serve the app
-CMD ["serve", "-s", "build", "-l", "5000"]
+CMD ["serve", "-s", "build", "-l", "3000"]
