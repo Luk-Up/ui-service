@@ -20,7 +20,7 @@ RUN npm run build
 # ==========================
 # Stage 2: Lightweight serve
 # ==========================
-FROM node:16-slim
+FROM node:16-slim AS final
 
 # Step 7: Install serve globally
 RUN npm install -g serve
