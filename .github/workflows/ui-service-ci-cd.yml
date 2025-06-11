@@ -26,7 +26,6 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and Push Docker Image
-        id: build_and_push
         uses: docker/build-push-action@v5
         with:
           context: ./ui-service 
@@ -48,7 +47,6 @@ jobs:
         with:
           repository: Luk-Up/k8s
           path: k8s
-
      
       - name: Apply Kubernetes Manifests
         working-directory: ${{ github.workspace }}/k8s/ui-service # Windows paths
