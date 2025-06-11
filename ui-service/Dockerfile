@@ -32,7 +32,7 @@ COPY --from=builder /app/build /app/build
 WORKDIR /app
 
 # Step 10: Expose the port
-EXPOSE 5000
+EXPOSE 3000
 
 # Step 11: Serve the app
 CMD ["serve", "-s", "build", "-l", "5000"]
