@@ -1,7 +1,7 @@
-import { Canvas, useThree } from "@react-three/fiber";
+import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import React, { useRef } from "react";
-import { OrbitControls, MeshReflectorMaterial, useTexture } from "@react-three/drei";
+import React, { useRef, useState } from "react";
+import { OrbitControls, MeshReflectorMaterial, Stars } from "@react-three/drei";
 import { EffectComposer, Bloom, SelectiveBloom } from '@react-three/postprocessing';
 import { KernelSize, Resolution } from 'postprocessing';
 
@@ -17,13 +17,19 @@ function Moon() {
   );
 }
 
+function MoonReflection(){
+  const moonSize = 1.5;
+  const moonPosition = [0, -0.9, -7];
+  return (
+    <mesh position={moonPosition} rotation={[-Math.PI / 2, 0, 0]}>
+      <circleGeometry args={[moonSize]}/>
+      <meshStandardMaterial color="#FFFFFF" emissive="#E0E8FF" emissiveIntensity={4} toneMapped={false} />
+    </mesh>
+  )
+}
+
 function Lake() {
   const waterYPosition = -1
-  const [distortionMap] = useTexture(["/textures/water_distortion.jpg"]);
-  if(distortionMap){
-    distortionMap.wrapS = distortionMap.wrapT = THREE.RepeatWrapping;
-    distortionMap.repeat.set(4, 4);
-  }
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, waterYPosition, 0]}>
       <planeGeometry args={[1000, 1000]} />
@@ -35,12 +41,46 @@ function Lake() {
         color="#020610"         // Slightly lighter dark blue for base, just in case
         metalness={0.8}
         mirror={1}      
-        distortionMap={distortionMap}  
-        distortion={0.05}
         minDepthThreshold={0.4} // Adjusted for proper depth
         maxDepthThreshold={1.4} // Adjusted for proper depth
-        depthScale={0.0}        // Much smaller depth scale to keep reflection at surface
+        depthScale={1.0}        // Much smaller depth scale to keep reflection at surface
         depthToBlurRatioBias={0.9}
+      />
+    </mesh>
+  )
+}
+
+function RippleEffect({ initialPosition, onComplete }){
+  const meshRef = useRef();
+  const startTime = useRef(Date.now());
+  const maxDuration = 1.5;
+  const maxScale = 15;
+
+  useFrame(() => {
+    if(!meshRef.current) return;
+    const elapsedTime = (Date.now() - startTime.current) / 1000;
+    if(elapsedTime < maxDuration){
+      const progress = elapsedTime / maxDuration;
+      const currentScale = progress * maxScale;
+      const currentOpacity = Math.max(0, 0.707 * (1 - progress * progress));
+      meshRef.current.scale.set(currentScale, currentScale, 1);
+      meshRef.current.material.opactiy = currentOpacity;
+    } else{
+      meshRef.current.visible = false;
+      if(onComplete){
+        onComplete();
+      }
+    }
+  });
+
+  return (
+    <mesh ref={meshRef} position={[0, -0.99, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <ringGeometry args={[0.1, 0.3, 32]}/>
+      <meshBasicMaterial
+        color="#87CEFA" // Light sky blue, neon-ish
+        transparent
+        opacity={0.7}    // Initial opacity
+        side={THREE.DoubleSide}
       />
     </mesh>
   )
@@ -55,6 +95,8 @@ function MoonlitLakeScene() {
         <ambientLight intensity={0.2} color="#6070A0" />
         <Moon />
         <Lake />
+        <MoonReflection />
+        <Stars radius={500} count={500} depth={50} factor={4} fade speed={0.5} saturation={0}/> 
         <EffectComposer>
           <Bloom kernelSize={KernelSize.HUGE} luminanceThreshold={0.4} luminanceSmoothing={0.025} intensity={2.0} mipmapBlur />
         </EffectComposer>
