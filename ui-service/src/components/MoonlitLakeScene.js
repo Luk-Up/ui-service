@@ -1,6 +1,6 @@
 import { MeshReflectorMaterial, Stars, OrbitControls } from "@react-three/drei";
 import { useThree, Canvas, useFrame } from "@react-three/fiber";
-import { useRef, Suspense } from "react";
+import { useRef, Suspense, useState } from "react";
 import * as THREE from "three";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import { KernelSize } from "postprocessing";
@@ -16,7 +16,7 @@ function Moon({ moonPosition }) {
   );
 }
 
-function MoonReflection({reflectionPosition}){
+function MoonReflection({ reflectionPosition }) {
   const reflectionRotation = [-Math.PI / 2, 0, 0];
   const reflectionRadius = 1.2;
 
@@ -28,12 +28,12 @@ function MoonReflection({reflectionPosition}){
   )
 }
 
-function Lake() {
+function Lake({ onClick }) {
   const lakePosition = [0, -1, 0];
   const lakeRotation = [-Math.PI / 2, 0, 0]
 
   return (
-    <mesh position={lakePosition} rotation={lakeRotation}>
+    <mesh position={lakePosition} rotation={lakeRotation} onClick={onClick}>
       <planeGeometry args={[1000, 1000]} />
       <meshStandardMaterial
         color="#020610" // A very dark blue, almost black
@@ -46,10 +46,61 @@ function Lake() {
   )
 }
 
+function Ripple({ id, initialPosition, onComplete }) {
+  const meshRef = useRef();
+  const startTime = useRef(Date.now());
+
+  const duration = 2;
+  const maxRadius = 5;
+
+  useFrame(() => {
+    if(!meshRef.current) return;
+    const elapsedTime = (Date.now() - startTime.current) / 1000;
+    if(elapsedTime < duration){
+      const progress = elapsedTime / duration;
+
+      const currentScale = 0.1 + progress * (maxRadius - 1);
+      meshRef.current.scale.set(currentScale, currentScale, 1);
+
+      meshRef.current.material.opacity = 0.6 * (1 - progress * progress);
+    } else{
+      if (meshRef.current.visible) {
+        meshRef.current.visible = false;
+        if (onComplete) {
+          onComplete(id);
+        }
+      }
+    }
+  })
+
+  return (
+    <mesh ref={meshRef} position={[initialPosition.x, initialPosition.y + 0.001, initialPosition.z]} rotation={[-Math.PI / 2, 0, 0]}>
+      <circleGeometry args={[1, 32]} />
+      <meshBasicMaterial color="#7DF9FF" transparent opacity={0.6} side={THREE.DoubleSide} />
+    </mesh>
+  )
+
+}
+
 
 function MoonlitLakeScene() {
   const moonPosition = [0, 8, -8];
-  const reflectionPosition = [0, -0.99, -8]
+  const reflectionPosition = [0, -0.99, -8];
+  const [ripples, setRipples] = useState([]);
+
+  const handleClick = (event) => {
+    event.stopPropagation();
+    const newRipple = {
+      id: Date.now(),
+      position: event.point
+    };
+    setRipples(currentRipples => [...currentRipples, newRipple]);
+  };
+
+  const handleRippleComplete = (rippleId) => {
+    setRipples(currentRipples => currentRipples.filter(r => r.id !== rippleId));
+  };
+
   return (
     <div style={{ margin: 0, padding: 0, overflow: "hidden", background: "black", width: "100vw", height: "100vh" }}>
       <Canvas camera={{ position: [0, 2, 20], fov: 55, near: 0.1, far: 1000 }} >
@@ -59,8 +110,12 @@ function MoonlitLakeScene() {
         {/* <directionalLight position={[0, 10, 10]} intensity={1.5} color="#A080FF" castShadow={false}/> */}
         <Suspense fallback={null}>
           <Moon moonPosition={moonPosition} />
-          <Lake /> {/* --- ADDED THE LAKE TO THE SCENE --- */}
+          <Lake onClick={handleClick} /> {/* --- ADDED THE LAKE TO THE SCENE --- */}
           <MoonReflection reflectionPosition={reflectionPosition} />
+          {ripples.map(ripple => {
+            return <Ripple key={ripple.id} id={ripple.id} initialPosition={ripple.position} onComplete={handleRippleComplete}/>
+          })}
+
         </Suspense>
         <Stars radius={100} depth={50} count={1000} factor={0.4} saturation={0} fade speed={1} />
         <EffectComposer>
