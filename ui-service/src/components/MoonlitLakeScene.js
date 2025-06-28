@@ -1,9 +1,10 @@
 import { MeshReflectorMaterial, Stars, OrbitControls } from "@react-three/drei";
 import { useThree, Canvas, useFrame } from "@react-three/fiber";
-import { useRef, Suspense, useState } from "react";
+import { useRef, Suspense, useState, useEffect } from "react";
 import * as THREE from "three";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import { KernelSize } from "postprocessing";
+import {gsap} from "gsap";
 
 function Moon({ moonPosition }) {
   const moonRadius = 1;
@@ -51,7 +52,7 @@ function Ripple({ id, initialPosition, onComplete }) {
   const startTime = useRef(Date.now());
 
   const duration = 2;
-  const maxRadius = 5;
+  const maxRadius = 3;
 
   useFrame(() => {
     if(!meshRef.current) return;
@@ -74,12 +75,60 @@ function Ripple({ id, initialPosition, onComplete }) {
   })
 
   return (
-    <mesh ref={meshRef} position={[initialPosition.x, initialPosition.y + 0.001, initialPosition.z]} rotation={[-Math.PI / 2, 0, 0]}>
+    <mesh ref={meshRef} position={[initialPosition.x, initialPosition.y + 0.01, initialPosition.z]} rotation={[-Math.PI / 2, 0, 0]}>
       <circleGeometry args={[1, 32]} />
       <meshBasicMaterial color="#7DF9FF" transparent opacity={0.6} side={THREE.DoubleSide} />
     </mesh>
   )
 
+}
+
+function CameraAnimator({reflectionPosition}){
+  const {camera, controls, gl} = useThree();
+  const timeline = useRef();
+  useEffect(() => {
+    if(!controls) return;
+    timeline.current = gsap.timeline({ paused: true });
+    timeline.current.to(
+      camera.position, {
+        duration: 2,
+        x: 0, 
+        y: 1,
+        z: 4,
+        ease: "power2.inOut"
+      },
+      0
+    );
+    timeline.current.to(
+      controls.target, {
+        duration: 2,
+        x: reflectionPosition[0],
+        y: reflectionPosition[1],
+        z: reflectionPosition[2],
+        ease: "power2.inOut",
+      },
+      0
+    );
+
+    const handleScroll = (event) => {
+      const scrollAmount = event.deltaY * 0.0005;
+      let currentProgress = timeline.current.progress();
+      currentProgress += scrollAmount;
+      const newProgress = Math.max(0, Math.min(1, currentProgress));
+      timeline.current.progress(newProgress);
+    };
+
+
+
+    gl.domElement.addEventListener("wheel", handleScroll);
+
+    return () => {
+      gl.domElement.removeEventListener("wheel", handleScroll)
+    };
+
+  }, [camera, controls, gl, reflectionPosition]);
+  
+  return null;
 }
 
 
@@ -117,6 +166,7 @@ function MoonlitLakeScene() {
           })}
 
         </Suspense>
+        <CameraAnimator reflectionPosition={reflectionPosition} />
         <Stars radius={100} depth={50} count={1000} factor={0.4} saturation={0} fade speed={1} />
         <EffectComposer>
           <Bloom
@@ -127,7 +177,7 @@ function MoonlitLakeScene() {
             mipmapBlur
           />
         </EffectComposer>
-        <OrbitControls enableDamping />
+        <OrbitControls enableDamping minDistance={5} maxDistance={60} maxPolarAngle={Math.PI / 2} enableZoom={false} />
       </Canvas>
     </div>
 
